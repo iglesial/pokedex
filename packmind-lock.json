@@ -8,7 +8,8 @@
     "claude",
     "packmind"
   ],
-  "installedAt": "2026-04-12T08:33:58.720Z",
+  "installedAt": "2026-04-12T09:07:01.538Z",
+  "targetId": "b83a3d83-d472-4cf0-8504-258e0538003e",
   "artifacts": {
     "standard:react-core-component-architecture": {
       "name": "React Core Component Architecture",
