@@ -1,0 +1,9 @@
+{
+  "packages": {
+    "github": "*",
+    "react": "*"
+  },
+  "agents": [
+    "claude"
+  ]
+}
