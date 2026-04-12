@@ -1,0 +1,110 @@
+.pokemon-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      160deg,
+      var(--color-surface) 0%,
+      color-mix(in srgb, var(--pokemon-card-accent) 18%, var(--color-surface)) 100%
+    );
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pokemon-card {
+    transition:
+      transform 180ms ease-out,
+      box-shadow 180ms ease-out;
+  }
+  .pokemon-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.pokemon-card__top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-xs);
+}
+
+.pokemon-card__number {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text);
+  opacity: 0.5;
+  background-color: color-mix(
+    in srgb,
+    var(--color-surface) 70%,
+    transparent
+  );
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+}
+
+.pokemon-card__sprite-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 1;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Decorative circular halo behind the sprite */
+.pokemon-card__sprite-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background-color: var(--pokemon-card-accent, var(--color-primary));
+  opacity: 0.18;
+  z-index: 0;
+}
+
+.pokemon-card__sprite {
+  position: relative;
+  z-index: 1;
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.pokemon-card__sprite-fallback {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-light);
+  font-weight: 700;
+}
+
+.pokemon-card__name {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.pokemon-card__types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  justify-content: center;
+}
