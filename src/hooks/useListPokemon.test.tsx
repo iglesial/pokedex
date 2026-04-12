@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
+import type { PropsWithChildren } from 'react'
 import { server } from '../test/setup'
 import {
   buildListResponse,
@@ -9,9 +11,17 @@ import {
 } from '../test/msw-handlers'
 import { useListPokemon } from './useListPokemon'
 
+function wrapperAt(initialPath: string) {
+  return function Wrapper({ children }: PropsWithChildren) {
+    return <MemoryRouter initialEntries={[initialPath]}>{children}</MemoryRouter>
+  }
+}
+
 describe('useListPokemon', () => {
-  it('loads initial page on mount', async () => {
-    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }))
+  it('loads initial page (default page 1)', async () => {
+    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }), {
+      wrapper: wrapperAt('/'),
+    })
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -21,9 +31,21 @@ describe('useListPokemon', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('reads initial page from URL query', async () => {
+    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }), {
+      wrapper: wrapperAt('/?page=3'),
+    })
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+    expect(result.current.page).toBe(3)
+  })
+
   it('sets error and leaves pokemon empty on failure', async () => {
     server.use(errorListHandler)
-    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }))
+    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }), {
+      wrapper: wrapperAt('/'),
+    })
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -33,7 +55,9 @@ describe('useListPokemon', () => {
 
   it('reports totalPages=0 on empty list', async () => {
     server.use(emptyListHandler)
-    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }))
+    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }), {
+      wrapper: wrapperAt('/'),
+    })
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -41,8 +65,10 @@ describe('useListPokemon', () => {
     expect(result.current.totalPages).toBe(0)
   })
 
-  it('setPage replaces list with new page entries', async () => {
-    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }))
+  it('setPage updates URL and replaces list with new page entries', async () => {
+    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }), {
+      wrapper: wrapperAt('/'),
+    })
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -55,7 +81,6 @@ describe('useListPokemon', () => {
     })
     expect(result.current.page).toBe(2)
     expect(result.current.pokemon).toHaveLength(3)
-    // Page 2 fixtures start at id=4 (offset 3)
     expect(result.current.pokemon.map((p) => p.name)).not.toEqual(
       firstPageNames,
     )
@@ -70,7 +95,9 @@ describe('useListPokemon', () => {
         return HttpResponse.json(buildListResponse({ limit, offset, count: 9 }))
       }),
     )
-    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }))
+    const { result } = renderHook(() => useListPokemon({ pageSize: 3 }), {
+      wrapper: wrapperAt('/'),
+    })
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
     })
@@ -78,10 +105,14 @@ describe('useListPokemon', () => {
     act(() => {
       result.current.setPage(999)
     })
-    expect(result.current.page).toBe(3)
+    await waitFor(() => {
+      expect(result.current.page).toBe(3)
+    })
     act(() => {
       result.current.setPage(-5)
     })
-    expect(result.current.page).toBe(1)
+    await waitFor(() => {
+      expect(result.current.page).toBe(1)
+    })
   })
 })

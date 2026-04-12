@@ -6,6 +6,13 @@ const routes: RouteObject[] = [
     path: '/',
     element: <HomePage />,
   },
+  {
+    path: '/pokemon/:id',
+    lazy: () =>
+      import('../pages/DetailPage').then((m) => ({
+        Component: m.DetailPage,
+      })),
+  },
 ]
 
 if (import.meta.env.DEV) {

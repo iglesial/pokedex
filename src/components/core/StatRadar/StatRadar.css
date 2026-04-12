@@ -1,0 +1,58 @@
+.stat-radar {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+.stat-radar__svg {
+  width: 100%;
+  height: auto;
+}
+
+.stat-radar__grid {
+  fill: none;
+  stroke: var(--color-text-light);
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.stat-radar__axis {
+  stroke: var(--color-text-light);
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+.stat-radar__shape {
+  fill-opacity: 0.4;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.stat-radar__label {
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+.stat-radar__value {
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: 500;
+  fill: var(--color-text-light);
+}
+
+.stat-radar__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
