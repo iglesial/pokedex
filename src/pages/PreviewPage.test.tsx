@@ -10,10 +10,16 @@ describe('PreviewPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows empty gallery message', () => {
+  it('renders all three category sections', () => {
     render(<PreviewPage />)
     expect(
-      screen.getByText(/no components have been added yet/i),
+      screen.getByRole('heading', { level: 2, name: /feedback & status/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 2, name: /form inputs/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 2, name: /layout & overlays/i }),
     ).toBeInTheDocument()
   })
 })

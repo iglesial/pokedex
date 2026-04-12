@@ -1,0 +1,55 @@
+.modal {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 0;
+  max-width: min(32rem, 90vw);
+  width: 100%;
+}
+
+.modal__content {
+  position: relative;
+  padding: var(--spacing-lg);
+}
+
+.modal__heading {
+  padding-right: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.modal__heading :where(h1, h2, h3) {
+  margin: 0;
+  font-size: inherit;
+}
+
+.modal__body {
+  color: var(--color-text);
+}
+
+.modal__close {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: transparent;
+  border: none;
+  color: var(--color-text-light);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+}
+
+.modal__close:hover {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+.modal__close:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

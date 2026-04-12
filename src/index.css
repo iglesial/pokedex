@@ -9,6 +9,19 @@
   --color-text-light: #6b7280;
   --color-text-on-primary: #ffffff;
 
+  /* Semantic / severity colors */
+  --color-success: #16803c;
+  --color-success-bg: #d1fae5;
+  --color-warning: #b45309;
+  --color-warning-bg: #fef3c7;
+  --color-error: #b91c1c;
+  --color-error-bg: #fee2e2;
+  --color-info: #1e40af;
+  --color-info-bg: #dbeafe;
+
+  /* Focus */
+  --color-focus-ring: #30a7d7;
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -68,4 +81,19 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Global dialog backdrop — see Modal component */
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
