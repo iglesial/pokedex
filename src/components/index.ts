@@ -36,3 +36,9 @@ export type { HeroProps } from './core/Hero/Hero'
 
 export { Modal } from './core/Modal/Modal'
 export type { ModalProps } from './core/Modal/Modal'
+
+export { Pagination } from './core/Pagination/Pagination'
+export type { PaginationProps } from './core/Pagination/Pagination'
+
+export { PokemonCard } from './core/PokemonCard/PokemonCard'
+export type { PokemonCardProps } from './core/PokemonCard/PokemonCard'
