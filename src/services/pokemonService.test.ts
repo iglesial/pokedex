@@ -6,7 +6,12 @@ import {
   buildPokemonDetail,
   errorListHandler,
 } from '../test/msw-handlers'
-import { fetchPokemonPage, toListEntry } from './pokemonService'
+import {
+  fetchPokemon,
+  fetchPokemonPage,
+  PokemonNotFoundError,
+  toListEntry,
+} from './pokemonService'
 
 describe('pokemonService', () => {
   describe('fetchPokemonPage', () => {
@@ -58,6 +63,46 @@ describe('pokemonService', () => {
       const promise = fetchPokemonPage({ pageSize: 3, signal: controller.signal })
       controller.abort()
       await expect(promise).rejects.toThrow()
+    })
+  })
+
+  describe('fetchPokemon', () => {
+    it('returns a Pokémon for a valid id', async () => {
+      const result = await fetchPokemon(1)
+      expect(result.id).toBe(1)
+      expect(result.types).toBeDefined()
+    })
+
+    it('accepts string ids', async () => {
+      const result = await fetchPokemon('25')
+      expect(result.id).toBe(25)
+    })
+
+    it('throws PokemonNotFoundError for non-numeric id', async () => {
+      await expect(fetchPokemon('abc')).rejects.toBeInstanceOf(
+        PokemonNotFoundError,
+      )
+    })
+
+    it('throws PokemonNotFoundError for id below range', async () => {
+      await expect(fetchPokemon(0)).rejects.toBeInstanceOf(
+        PokemonNotFoundError,
+      )
+    })
+
+    it('throws PokemonNotFoundError for id above Gen I range', async () => {
+      await expect(fetchPokemon(200)).rejects.toBeInstanceOf(
+        PokemonNotFoundError,
+      )
+    })
+
+    it('throws readable error on HTTP 500', async () => {
+      server.use(
+        http.get('https://pokeapi.co/api/v2/pokemon/:id', () =>
+          HttpResponse.text('server error', { status: 500 }),
+        ),
+      )
+      await expect(fetchPokemon(1)).rejects.toThrow(/HTTP 500/)
     })
   })
 

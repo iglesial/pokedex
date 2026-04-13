@@ -1,3 +1,16 @@
+.pokemon-card__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  height: 100%;
+}
+
+.pokemon-card__link:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .pokemon-card {
   position: relative;
   display: flex;
@@ -63,7 +76,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80%;
+  width: 95%;
   aspect-ratio: 1;
   border-radius: var(--radius-full);
   background-color: var(--pokemon-card-accent, var(--color-primary));
@@ -74,8 +87,8 @@
 .pokemon-card__sprite {
   position: relative;
   z-index: 1;
-  max-width: 90%;
-  max-height: 90%;
+  width: 95%;
+  height: 95%;
   object-fit: contain;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
 }

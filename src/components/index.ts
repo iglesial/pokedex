@@ -42,3 +42,6 @@ export type { PaginationProps } from './core/Pagination/Pagination'
 
 export { PokemonCard } from './core/PokemonCard/PokemonCard'
 export type { PokemonCardProps } from './core/PokemonCard/PokemonCard'
+
+export { StatRadar } from './core/StatRadar/StatRadar'
+export type { StatPoint, StatRadarProps } from './core/StatRadar/StatRadar'

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   fetchPokemonPage,
   type PokemonListEntry,
@@ -6,7 +7,6 @@ import {
 
 export interface UseListPokemonOptions {
   pageSize?: number
-  initialPage?: number
 }
 
 export interface UseListPokemonResult {
@@ -18,11 +18,18 @@ export interface UseListPokemonResult {
   setPage: (page: number) => void
 }
 
+function parsePage(raw: string | null): number {
+  if (!raw) return 1
+  const parsed = Number.parseInt(raw, 10)
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : 1
+}
+
 export function useListPokemon({
   pageSize = 20,
-  initialPage = 1,
 }: UseListPokemonOptions = {}): UseListPokemonResult {
-  const [page, setPage] = useState(initialPage)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parsePage(searchParams.get('page'))
+
   const [pokemon, setPokemon] = useState<PokemonListEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,9 +37,6 @@ export function useListPokemon({
 
   useEffect(() => {
     const controller = new AbortController()
-    // Reset UI state at the start of each page load. The async fetch below
-    // feeds subsequent state updates; the rule flags sync sets in effects
-    // but this pattern is intentional.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     setError(null)
@@ -66,12 +70,20 @@ export function useListPokemon({
 
   const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize)
 
-  const setPageSafe = useCallback(
+  const setPage = useCallback(
     (next: number) => {
       const clamped = Math.max(1, Math.min(next, totalPages || 1))
-      setPage(clamped)
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev)
+        if (clamped === 1) {
+          newParams.delete('page')
+        } else {
+          newParams.set('page', clamped.toString())
+        }
+        return newParams
+      })
     },
-    [totalPages],
+    [setSearchParams, totalPages],
   )
 
   return {
@@ -80,6 +92,6 @@ export function useListPokemon({
     error,
     page,
     totalPages,
-    setPage: setPageSafe,
+    setPage,
   }
 }

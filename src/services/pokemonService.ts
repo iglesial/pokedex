@@ -5,6 +5,25 @@ const API_BASE = 'https://pokeapi.co/api/v2'
 /** Cap the list to Gen I (original Kanto Pokédex). */
 export const MAX_POKEMON = 151
 
+/**
+ * Thrown when a requested Pokémon id is not in the Gen I range or
+ * cannot be parsed. Distinct from network/HTTP errors so the UI can
+ * render a dedicated "Not Found" view.
+ */
+export class PokemonNotFoundError extends Error {
+  readonly id: number | string
+
+  constructor(id: number | string) {
+    super(`Pokémon #${String(id)} is not in the Kanto Pokédex (1–${String(MAX_POKEMON)}).`)
+    this.name = 'PokemonNotFoundError'
+    this.id = id
+  }
+}
+
+export interface FetchPokemonOptions {
+  signal?: AbortSignal
+}
+
 export interface PokemonListEntry {
   id: number
   name: string
@@ -51,6 +70,24 @@ async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     )
   }
   return (await response.json()) as T
+}
+
+export async function fetchPokemon(
+  id: number | string,
+  { signal }: FetchPokemonOptions = {},
+): Promise<Pokemon> {
+  const numericId = typeof id === 'number' ? id : Number.parseInt(id, 10)
+  if (
+    !Number.isInteger(numericId) ||
+    numericId < 1 ||
+    numericId > MAX_POKEMON
+  ) {
+    throw new PokemonNotFoundError(id)
+  }
+  return fetchJson<Pokemon>(
+    `${API_BASE}/pokemon/${numericId.toString()}`,
+    signal,
+  )
 }
 
 export async function fetchPokemonPage({

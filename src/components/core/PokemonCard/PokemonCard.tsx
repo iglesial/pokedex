@@ -1,4 +1,5 @@
 import { useState, type HTMLAttributes } from 'react'
+import { Link } from 'react-router-dom'
 import { Badge } from '../Badge/Badge'
 import type { PokemonListEntry } from '../../../services/pokemonService'
 import {
@@ -19,34 +20,41 @@ export function PokemonCard({ pokemon, className, ...rest }: PokemonCardProps) {
   } as React.CSSProperties
 
   const classes = ['pokemon-card', className].filter(Boolean).join(' ')
+  const titleName = toTitleCase(pokemon.name)
 
   return (
-    <article className={classes} style={cardStyle} {...rest}>
-      <div className="pokemon-card__top">
-        <span className="pokemon-card__number">
-          {formatPokedexNumber(pokemon.id)}
-        </span>
-      </div>
-      <div className="pokemon-card__sprite-wrapper">
-        <div className="pokemon-card__sprite-bg" aria-hidden="true" />
-        <PokemonSprite src={pokemon.spriteUrl} name={pokemon.name} />
-      </div>
-      <h2 className="pokemon-card__name">{toTitleCase(pokemon.name)}</h2>
-      <div className="pokemon-card__types">
-        {pokemon.types.map((type) => (
-          <Badge
-            key={type}
-            style={{
-              backgroundColor: getTypeColorVar(type),
-              color: 'var(--color-text-on-primary)',
-              border: 'none',
-            }}
-          >
-            {toTitleCase(type)}
-          </Badge>
-        ))}
-      </div>
-    </article>
+    <Link
+      to={`/pokemon/${pokemon.id.toString()}`}
+      className="pokemon-card__link"
+      aria-label={`View ${titleName} details`}
+    >
+      <article className={classes} style={cardStyle} {...rest}>
+        <div className="pokemon-card__top">
+          <span className="pokemon-card__number">
+            {formatPokedexNumber(pokemon.id)}
+          </span>
+        </div>
+        <div className="pokemon-card__sprite-wrapper">
+          <div className="pokemon-card__sprite-bg" aria-hidden="true" />
+          <PokemonSprite src={pokemon.spriteUrl} name={pokemon.name} />
+        </div>
+        <h2 className="pokemon-card__name">{titleName}</h2>
+        <div className="pokemon-card__types">
+          {pokemon.types.map((type) => (
+            <Badge
+              key={type}
+              style={{
+                backgroundColor: getTypeColorVar(type),
+                color: 'var(--color-text-on-primary)',
+                border: 'none',
+              }}
+            >
+              {toTitleCase(type)}
+            </Badge>
+          ))}
+        </div>
+      </article>
+    </Link>
   )
 }
 
