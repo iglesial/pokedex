@@ -1,0 +1,91 @@
+.evo-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  width: 96px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-background);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  font-family: var(--font-family);
+}
+
+.evo-mini--interactive {
+  cursor: pointer;
+}
+
+.evo-mini--interactive:hover {
+  background-color: var(--color-background);
+}
+
+.evo-mini--interactive:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.evo-mini--current {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  cursor: default;
+}
+
+.evo-mini--out-of-kanto {
+  opacity: 0.55;
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.evo-mini__sprite-wrap {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-background);
+  border-radius: var(--radius-full);
+}
+
+.evo-mini__sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.evo-mini__sprite-fallback {
+  font-size: var(--font-size-xl);
+  color: var(--color-text-light);
+  font-weight: 700;
+}
+
+.evo-mini__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  text-align: center;
+}
+
+.evo-mini__number {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.evo-mini__name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.evo-mini__badge {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  font-weight: 600;
+  background-color: var(--color-background);
+  padding: 0 var(--spacing-xs);
+  border-radius: var(--radius-sm);
+}

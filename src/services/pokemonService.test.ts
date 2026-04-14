@@ -7,6 +7,8 @@ import {
   errorListHandler,
 } from '../test/msw-handlers'
 import {
+  fetchAllPokemon,
+  fetchEvolutionChainForPokemon,
   fetchPokemon,
   fetchPokemonPage,
   PokemonNotFoundError,
@@ -103,6 +105,61 @@ describe('pokemonService', () => {
         ),
       )
       await expect(fetchPokemon(1)).rejects.toThrow(/HTTP 500/)
+    })
+  })
+
+  describe('fetchAllPokemon', () => {
+    it('returns all 151 Gen I entries in one call', async () => {
+      const result = await fetchAllPokemon()
+      expect(result).toHaveLength(151)
+    })
+
+    it('can be aborted via signal', async () => {
+      const controller = new AbortController()
+      const promise = fetchAllPokemon({ signal: controller.signal })
+      controller.abort()
+      await expect(promise).rejects.toThrow()
+    })
+  })
+
+  describe('fetchEvolutionChainForPokemon', () => {
+    it('returns an evolution chain via species → chain indirection', async () => {
+      const result = await fetchEvolutionChainForPokemon(1)
+      expect(result.id).toBeDefined()
+      expect(result.chain).toBeDefined()
+    })
+
+    it('throws readable error when species fetch fails', async () => {
+      server.use(
+        http.get(
+          'https://pokeapi.co/api/v2/pokemon-species/:id',
+          () => HttpResponse.text('server error', { status: 500 }),
+        ),
+      )
+      await expect(fetchEvolutionChainForPokemon(1)).rejects.toThrow(
+        /HTTP 500/,
+      )
+    })
+
+    it('throws readable error when evolution-chain fetch fails', async () => {
+      server.use(
+        http.get(
+          'https://pokeapi.co/api/v2/evolution-chain/:id',
+          () => HttpResponse.text('server error', { status: 500 }),
+        ),
+      )
+      await expect(fetchEvolutionChainForPokemon(1)).rejects.toThrow(
+        /HTTP 500/,
+      )
+    })
+
+    it('cancels via AbortSignal', async () => {
+      const controller = new AbortController()
+      const promise = fetchEvolutionChainForPokemon(1, {
+        signal: controller.signal,
+      })
+      controller.abort()
+      await expect(promise).rejects.toThrow()
     })
   })
 

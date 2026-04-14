@@ -1,3 +1,7 @@
+import type {
+  EvolutionChainResponse,
+  PokemonSpeciesResponse,
+} from '../types/evolutionChain'
 import type { Pokemon } from '../types/pokemon'
 
 const API_BASE = 'https://pokeapi.co/api/v2'
@@ -88,6 +92,41 @@ export async function fetchPokemon(
     `${API_BASE}/pokemon/${numericId.toString()}`,
     signal,
   )
+}
+
+/**
+ * Fetches a Pokémon's species, then follows `evolution_chain.url`
+ * to fetch the raw chain. Returns the raw EvolutionChainResponse —
+ * flattening into branches is the caller's responsibility (use the
+ * pure utility in src/utils/evolutionChain.ts).
+ */
+export async function fetchEvolutionChainForPokemon(
+  pokemonId: number,
+  { signal }: FetchPokemonOptions = {},
+): Promise<EvolutionChainResponse> {
+  const species = await fetchJson<PokemonSpeciesResponse>(
+    `${API_BASE}/pokemon-species/${pokemonId.toString()}`,
+    signal,
+  )
+  return fetchJson<EvolutionChainResponse>(
+    species.evolution_chain.url,
+    signal,
+  )
+}
+
+/**
+ * Fetches every Kanto Pokémon (1..MAX_POKEMON) as a single batch.
+ * Used by the list page to enable client-side filtering/search.
+ */
+export async function fetchAllPokemon(
+  { signal }: FetchPokemonOptions = {},
+): Promise<PokemonListEntry[]> {
+  const result = await fetchPokemonPage({
+    pageSize: MAX_POKEMON,
+    offset: 0,
+    signal,
+  })
+  return result.entries
 }
 
 export async function fetchPokemonPage({

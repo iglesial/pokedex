@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  fetchPokemonPage,
+  fetchAllPokemon,
   type PokemonListEntry,
 } from '../services/pokemonService'
 
@@ -10,7 +10,11 @@ export interface UseListPokemonOptions {
 }
 
 export interface UseListPokemonResult {
+  /** Full prefetched set of Kanto Pokémon. */
+  allEntries: PokemonListEntry[]
+  /** Current page slice of the full set. */
   pokemon: PokemonListEntry[]
+  /** True only during the initial prefetch. */
   loading: boolean
   error: string | null
   page: number
@@ -30,10 +34,9 @@ export function useListPokemon({
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parsePage(searchParams.get('page'))
 
-  const [pokemon, setPokemon] = useState<PokemonListEntry[]>([])
+  const [allEntries, setAllEntries] = useState<PokemonListEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [totalCount, setTotalCount] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -41,15 +44,10 @@ export function useListPokemon({
     setLoading(true)
     setError(null)
 
-    fetchPokemonPage({
-      pageSize,
-      offset: (page - 1) * pageSize,
-      signal: controller.signal,
-    })
-      .then((result) => {
+    fetchAllPokemon({ signal: controller.signal })
+      .then((entries) => {
         if (controller.signal.aborted) return
-        setPokemon(result.entries)
-        setTotalCount(result.totalCount)
+        setAllEntries(entries)
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
@@ -66,9 +64,11 @@ export function useListPokemon({
     return () => {
       controller.abort()
     }
-  }, [page, pageSize])
+  }, [])
 
+  const totalCount = allEntries.length
   const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize)
+  const pokemon = allEntries.slice((page - 1) * pageSize, page * pageSize)
 
   const setPage = useCallback(
     (next: number) => {
@@ -87,6 +87,7 @@ export function useListPokemon({
   )
 
   return {
+    allEntries,
     pokemon,
     loading,
     error,

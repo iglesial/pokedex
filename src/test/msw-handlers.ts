@@ -94,6 +94,73 @@ export function buildPokemonDetail(
   }
 }
 
+/**
+ * Build a minimal species response that points at a specific
+ * evolution chain id.
+ */
+export function buildSpeciesResponse(id: number, chainId: number) {
+  return {
+    id,
+    name: `pokemon-${id.toString()}`,
+    evolution_chain: {
+      url: `https://pokeapi.co/api/v2/evolution-chain/${chainId.toString()}/`,
+    },
+  }
+}
+
+interface ChainLinkLike {
+  species: { name: string; url: string }
+  evolves_to: ChainLinkLike[]
+  is_baby: boolean
+}
+
+function buildSpeciesRef(id: number) {
+  return {
+    name: `pokemon-${id.toString()}`,
+    url: `https://pokeapi.co/api/v2/pokemon-species/${id.toString()}/`,
+  }
+}
+
+/**
+ * Builds a recursive ChainLink tree from a list of branches.
+ * Each branch is a list of species ids starting with the common
+ * ancestor.
+ *
+ * Examples:
+ * - Linear (Bulbasaur): [[1, 2, 3]]
+ * - Single-stage (Mew): [[151]]
+ * - Branching (Eevee → V/J/F): [[133, 134], [133, 135], [133, 136]]
+ */
+export function buildEvolutionChainResponse(
+  branches: number[][],
+  chainId = 1,
+) {
+  if (branches.length === 0) {
+    throw new Error('buildEvolutionChainResponse requires at least one branch')
+  }
+  const rootId = branches[0][0]
+  // Group children by parent id, level by level
+  const byParent = new Map<number, Set<number>>()
+  for (const branch of branches) {
+    for (let i = 0; i < branch.length - 1; i++) {
+      const parent = branch[i]
+      const child = branch[i + 1]
+      const set = byParent.get(parent) ?? new Set<number>()
+      set.add(child)
+      byParent.set(parent, set)
+    }
+  }
+  const buildLink = (id: number): ChainLinkLike => ({
+    species: buildSpeciesRef(id),
+    evolves_to: Array.from(byParent.get(id) ?? []).map(buildLink),
+    is_baby: false,
+  })
+  return {
+    id: chainId,
+    chain: buildLink(rootId),
+  }
+}
+
 /** Default handlers: successful list + detail responses. */
 export const defaultHandlers = [
   http.get('https://pokeapi.co/api/v2/pokemon', ({ request }) => {
@@ -106,11 +173,34 @@ export const defaultHandlers = [
     const id = Number(params.id)
     return HttpResponse.json(buildPokemonDetail(id))
   }),
+  // Default species: every Pokémon points to its own chain id (= pokemon id).
+  http.get(
+    'https://pokeapi.co/api/v2/pokemon-species/:id',
+    ({ params }) => {
+      const id = Number(params.id)
+      return HttpResponse.json(buildSpeciesResponse(id, id))
+    },
+  ),
+  // Default evolution chain: linear single-stage (just the requesting Pokémon).
+  // Tests that need richer chains override this handler.
+  http.get(
+    'https://pokeapi.co/api/v2/evolution-chain/:id',
+    ({ params }) => {
+      const id = Number(params.id)
+      return HttpResponse.json(buildEvolutionChainResponse([[id]], id))
+    },
+  ),
 ]
 
 /** Handler that returns 500 for the list endpoint (error-state tests). */
 export const errorListHandler = http.get(
   'https://pokeapi.co/api/v2/pokemon',
+  () => new HttpResponse('Internal Server Error', { status: 500 }),
+)
+
+/** Handler that returns 500 for the evolution-chain endpoint. */
+export const evolutionChainErrorHandler = http.get(
+  'https://pokeapi.co/api/v2/evolution-chain/:id',
   () => new HttpResponse('Internal Server Error', { status: 500 }),
 )
 
