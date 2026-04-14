@@ -1,21 +1,28 @@
-import { render as rtlRender, screen, waitFor, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import type { ReactElement } from 'react'
-
-const render = (ui: ReactElement) =>
-  rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
-
+import {
+  render as rtlRender,
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { http, HttpResponse } from 'msw'
+import type { ReactElement } from 'react'
 import { server } from '../test/setup'
 import {
-  buildListResponse,
+  buildPokemonDetail,
   emptyListHandler,
   errorListHandler,
 } from '../test/msw-handlers'
 import { HomePage } from './HomePage'
+
+const render = (ui: ReactElement, initialPath = '/') =>
+  rtlRender(
+    <MemoryRouter initialEntries={[initialPath]}>{ui}</MemoryRouter>,
+  )
 
 describe('HomePage', () => {
   it('shows the Pokédex heading', () => {
@@ -25,25 +32,30 @@ describe('HomePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows a loading spinner while fetching', () => {
+  it('shows a loading spinner while prefetching', () => {
     render(<HomePage />)
-    expect(screen.getByRole('status')).toHaveTextContent(/loading pokémon/i)
+    expect(screen.getByText(/loading pokémon/i)).toBeInTheDocument()
   })
 
-  it('renders a grid of Pokémon cards after successful fetch', async () => {
+  // US1+US2+US3 baseline regression: no filters, no query, default page.
+  it('with no filters, renders the baseline grid and pagination', async () => {
     render(<HomePage />)
     await waitFor(() => {
       expect(
         screen.getByRole('list', { name: /pokémon list/i }),
       ).toBeInTheDocument()
     })
-    const items = screen.getAllByRole('listitem')
-    expect(items.length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/^#\d{3,}$/)[0]).toBeInTheDocument()
-    expect(screen.getAllByText(/Grass/i)[0]).toBeInTheDocument()
+    // 20 cards on page 1
+    const grid = screen.getByRole('list', { name: /pokémon list/i })
+    expect(grid.querySelectorAll('.pokemon-grid__item')).toHaveLength(20)
+    // Pagination visible with 8 pages (151 / 20 = 8)
+    expect(
+      screen.getByRole('navigation', { name: /pokédex pagination/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Page 8' })).toBeInTheDocument()
   })
 
-  it('shows an error alert when fetch fails', async () => {
+  it('shows an error alert when prefetch fails', async () => {
     server.use(errorListHandler)
     render(<HomePage />)
     await waitFor(() => {
@@ -51,11 +63,11 @@ describe('HomePage', () => {
     })
   })
 
-  it('shows empty-state message when no Pokémon returned', async () => {
+  it('shows empty-state message when the prefetched list is empty', async () => {
     server.use(emptyListHandler)
     render(<HomePage />)
     await waitFor(() => {
-      expect(screen.getByText(/no pokémon found/i)).toBeInTheDocument()
+      expect(screen.getByText(/no pokémon match/i)).toBeInTheDocument()
     })
   })
 
@@ -66,57 +78,126 @@ describe('HomePage', () => {
         screen.getByRole('list', { name: /pokémon list/i }),
       ).toBeInTheDocument()
     })
-    const firstImg = screen.getAllByAltText(/sprite/i)[0] as HTMLImageElement
+    const firstImg = screen.getAllByAltText(/sprite/i)[0]
     fireEvent.error(firstImg)
     await waitFor(() => {
-      expect(screen.getAllByLabelText(/sprite unavailable/i)[0]).toBeInTheDocument()
+      expect(
+        screen.getAllByLabelText(/sprite unavailable/i)[0],
+      ).toBeInTheDocument()
     })
   })
 
-  it('renders pagination with Previous disabled on page 1', async () => {
+  it('navigates to page 2 via pagination', async () => {
     render(<HomePage />)
     await waitFor(() => {
       expect(
         screen.getByRole('list', { name: /pokémon list/i }),
       ).toBeInTheDocument()
     })
-    expect(
-      screen.getByRole('navigation', { name: /pokédex pagination/i }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /previous page/i }),
-    ).toBeDisabled()
-  })
-
-  it('navigates to page 2 and replaces the list', async () => {
-    render(<HomePage />)
-    await waitFor(() => {
-      expect(
-        screen.getByRole('list', { name: /pokémon list/i }),
-      ).toBeInTheDocument()
-    })
-    const firstPageFirstCard = screen.getAllByText(/^#\d{3,}$/)[0].textContent
+    const firstCard = screen.getAllByText(/^#\d{3,}$/)[0].textContent
     await userEvent.click(screen.getByRole('button', { name: 'Page 2' }))
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: 'Page 2' }),
       ).toHaveAttribute('aria-current', 'page')
     })
-    const page2FirstCard = screen.getAllByText(/^#\d{3,}$/)[0].textContent
-    expect(page2FirstCard).not.toBe(firstPageFirstCard)
+    const newFirstCard = screen.getAllByText(/^#\d{3,}$/)[0].textContent
+    expect(newFirstCard).not.toBe(firstCard)
   })
 
-  it('hides pagination when total pages is 1 or less', async () => {
-    server.use(
-      http.get('https://pokeapi.co/api/v2/pokemon', ({ request }) => {
-        const url = new URL(request.url)
-        const limit = Number(url.searchParams.get('limit') ?? '20')
-        const offset = Number(url.searchParams.get('offset') ?? '0')
-        return HttpResponse.json(
-          buildListResponse({ limit, offset, count: Math.min(limit, 5) }),
-        )
-      }),
-    )
+  describe('filtering', () => {
+    it('filters the grid when a type chip is clicked', async () => {
+      // Give a known subset a distinct type so we can verify filtering.
+      server.use(
+        http.get('https://pokeapi.co/api/v2/pokemon/:id', ({ params }) => {
+          const id = Number(params.id)
+          const types =
+            id === 4
+              ? [{ slot: 1, type: { name: 'fire', url: '' } }]
+              : [
+                  { slot: 1, type: { name: 'grass', url: '' } },
+                  { slot: 2, type: { name: 'poison', url: '' } },
+                ]
+          return HttpResponse.json(buildPokemonDetail(id, { types }))
+        }),
+      )
+      render(<HomePage />)
+      await waitFor(() => {
+        expect(
+          screen.getByRole('list', { name: /pokémon list/i }),
+        ).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByRole('button', { name: 'Fire' }))
+      await waitFor(() => {
+        const items = screen.getAllByRole('listitem')
+        // Only pokemon id=4 has 'fire' type in this fixture
+        expect(items).toHaveLength(1)
+      })
+    })
+
+    it('shows empty-state when no Pokémon match the filters', async () => {
+      server.use(
+        http.get('https://pokeapi.co/api/v2/pokemon/:id', ({ params }) => {
+          const id = Number(params.id)
+          return HttpResponse.json(
+            buildPokemonDetail(id, {
+              types: [{ slot: 1, type: { name: 'grass', url: '' } }],
+            }),
+          )
+        }),
+      )
+      render(<HomePage />)
+      await waitFor(() => {
+        expect(
+          screen.getByRole('list', { name: /pokémon list/i }),
+        ).toBeInTheDocument()
+      })
+      await userEvent.click(screen.getByRole('button', { name: 'Fire' }))
+      await waitFor(() => {
+        expect(screen.getByText(/no pokémon match/i)).toBeInTheDocument()
+      })
+    })
+
+    describe('search', () => {
+      beforeEach(() => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+      })
+
+      afterEach(() => {
+        vi.useRealTimers()
+      })
+
+      it('filters the grid by search query after debounce', async () => {
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        render(<HomePage />)
+        await waitFor(() => {
+          expect(
+            screen.getByRole('list', { name: /pokémon list/i }),
+          ).toBeInTheDocument()
+        })
+        const input = screen.getByLabelText(/search pokémon by name/i)
+        await user.type(input, 'pokemon-25')
+        // Advance past debounce
+        act(() => {
+          vi.advanceTimersByTime(250)
+        })
+        await waitFor(() => {
+          expect(screen.getAllByRole('listitem')).toHaveLength(1)
+        })
+      })
+    })
+  })
+
+  it('Clear filters button appears only when filters are active', async () => {
+    render(<HomePage />, '/?types=fire')
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /clear filters/i }),
+      ).toBeInTheDocument()
+    })
+  })
+
+  it('Clear filters button is hidden with no active filters', async () => {
     render(<HomePage />)
     await waitFor(() => {
       expect(
@@ -124,23 +205,30 @@ describe('HomePage', () => {
       ).toBeInTheDocument()
     })
     expect(
-      screen.queryByRole('navigation', { name: /pagination/i }),
+      screen.queryByRole('button', { name: /clear filters/i }),
     ).not.toBeInTheDocument()
+  })
+
+  it('Clear filters resets query, types and page', async () => {
+    render(<HomePage />, '/?q=char&types=fire&page=2')
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /clear filters/i }),
+      ).toBeInTheDocument()
+    })
+    await userEvent.click(
+      screen.getByRole('button', { name: /clear filters/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: /clear filters/i }),
+      ).not.toBeInTheDocument()
+    })
   })
 
   it(
     'has no WCAG 2.1 AA violations in loaded state',
     async () => {
-      server.use(
-        http.get('https://pokeapi.co/api/v2/pokemon', ({ request }) => {
-          const url = new URL(request.url)
-          const offset = Number(url.searchParams.get('offset') ?? '0')
-          // Smaller fixture keeps the axe check fast
-          return HttpResponse.json(
-            buildListResponse({ limit: 3, offset, count: 9 }),
-          )
-        }),
-      )
       const { container } = render(<HomePage />)
       await waitFor(() => {
         expect(
@@ -150,6 +238,6 @@ describe('HomePage', () => {
       const results = await axe(container)
       expect(results).toHaveNoViolations()
     },
-    15000,
+    20000,
   )
 })

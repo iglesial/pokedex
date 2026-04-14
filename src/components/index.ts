@@ -45,3 +45,15 @@ export type { PokemonCardProps } from './core/PokemonCard/PokemonCard'
 
 export { StatRadar } from './core/StatRadar/StatRadar'
 export type { StatPoint, StatRadarProps } from './core/StatRadar/StatRadar'
+
+export { SearchInput } from './core/SearchInput/SearchInput'
+export type { SearchInputProps } from './core/SearchInput/SearchInput'
+
+export { TypeFilterChips } from './core/TypeFilterChips/TypeFilterChips'
+export type { TypeFilterChipsProps } from './core/TypeFilterChips/TypeFilterChips'
+
+export { EvolutionMiniCard } from './core/EvolutionMiniCard/EvolutionMiniCard'
+export type { EvolutionMiniCardProps } from './core/EvolutionMiniCard/EvolutionMiniCard'
+
+export { EvolutionChain } from './core/EvolutionChain/EvolutionChain'
+export type { EvolutionChainProps } from './core/EvolutionChain/EvolutionChain'

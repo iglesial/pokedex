@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Alert, Badge, Button, Spinner, StatRadar } from '../components'
+import {
+  Alert,
+  Badge,
+  Button,
+  EvolutionChain,
+  Spinner,
+  StatRadar,
+} from '../components'
 import { useGetPokemon } from '../hooks/useGetPokemon'
 import type { Pokemon } from '../types/pokemon'
 import {
@@ -231,6 +238,11 @@ export function DetailPage() {
           />
         </section>
       </div>
+
+      <EvolutionChain
+        pokemonId={pokemon.id}
+        className="detail-page__evolution"
+      />
     </main>
   )
 }

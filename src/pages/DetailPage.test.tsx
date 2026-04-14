@@ -5,7 +5,10 @@ import { describe, it, expect } from 'vitest'
 import { axe } from 'vitest-axe'
 import { http, HttpResponse } from 'msw'
 import { server } from '../test/setup'
-import { buildPokemonDetail } from '../test/msw-handlers'
+import {
+  buildPokemonDetail,
+  evolutionChainErrorHandler,
+} from '../test/msw-handlers'
 import { DetailPage } from './DetailPage'
 
 function renderAt(path: string) {
@@ -216,4 +219,31 @@ describe('DetailPage', () => {
     },
     15000,
   )
+
+  it('renders the Evolution section heading', async () => {
+    renderAt('/pokemon/1')
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    })
+    expect(
+      screen.getByRole('heading', { level: 2, name: /evolution/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('still renders identity, stats and abilities when evolution chain fails (SC-007)', async () => {
+    server.use(evolutionChainErrorHandler)
+    renderAt('/pokemon/1')
+    // Identity heading still loads
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    })
+    // Base stats section still renders
+    expect(
+      screen.getByRole('heading', { level: 2, name: /base stats/i }),
+    ).toBeInTheDocument()
+    // Evolution section shows its own error without breaking the page
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/HTTP 500/)
+    })
+  })
 })

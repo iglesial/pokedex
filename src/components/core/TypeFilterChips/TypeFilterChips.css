@@ -1,0 +1,35 @@
+.type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  padding: 0;
+}
+
+.type-chips__chip {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-on-primary);
+  background-color: var(--type-chip-color, var(--color-primary));
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  opacity: 0.55;
+  line-height: 1.2;
+}
+
+.type-chips__chip:hover:not(.type-chips__chip--selected) {
+  opacity: 0.75;
+}
+
+.type-chips__chip:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.type-chips__chip--selected {
+  opacity: 1;
+  border-color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
